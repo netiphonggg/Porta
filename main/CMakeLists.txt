@@ -10,7 +10,7 @@ idf_component_register(
         "i_sd_mmc/i_sd_mmc.c"
         "i_i2c/i_i2c.c"
                        
-    INCLUDE_DIRS 
+    INCLUDE_DIRS
         "."
         "i_modbus"
         "i_server"
@@ -19,8 +19,33 @@ idf_component_register(
         "i_https_client"
         "i_sd_mmc"
         "i_i2c"
-    
-    EMBED_TXTFILES 
+
+    REQUIRES
+        driver
+        espressif__mqtt
+        esp_wifi
+        esp_event
+        esp_netif
+        esp_http_server
+        esp_http_client
+        esp-tls
+        nvs_flash
+        espressif__cjson
+        fatfs
+        sdmmc
+        esp_adc
+        esp_driver_gpio
+        esp_driver_uart
+        esp_driver_i2c
+        esp_driver_ledc
+        esp_driver_touch_sens
+        esp_driver_sdmmc
+        vfs
+        lwip
+        mdns
+        espressif__esp-modbus
+
+    EMBED_TXTFILES
         "files/index.html"
         "files/sample.txt"
         "../cert/amazon.cer"  

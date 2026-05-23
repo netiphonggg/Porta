@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"   
-#include "driver/i2c.h"
 #include "esp_types.h"
 #include "esp_system.h"
 #include "esp_timer.h"

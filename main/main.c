@@ -84,7 +84,7 @@ static void IRAM_ATTR sd_detech_isr_handler(void *args){  // IRAM_ATTR = tell co
 static bool init_adc_calibration(adc_unit_t unit){
     adc_cali_line_fitting_config_t cali_config = {
         .unit_id = unit,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
         .bitwidth = ADC_BITWIDTH_12,
     };
 
@@ -142,7 +142,7 @@ static void init_gpio(void){
    /*  2) Configure channel -----------------------------*/
    adc_oneshot_chan_cfg_t config = {
       .bitwidth = ADC_BITWIDTH_12,      // 0–4095
-      .atten    = ADC_ATTEN_DB_11,      // up to 3.3–3.6V
+      .atten    = ADC_ATTEN_DB_12,      // up to 3.3–3.6V
    };
    adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_4, &config);
    adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_5, &config);
@@ -231,7 +231,7 @@ void app_main(void){
 
 
    /***** modbus ******/ 
-      init_esp_modbus();
+      // init_esp_modbus();
 
    /*****  REST API post request *****/
       // init_esp_https();

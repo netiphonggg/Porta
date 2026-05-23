@@ -1,7 +1,9 @@
 ## IDF Component Manager Manifest File
 dependencies:
   espressif/mdns: "^1.4.2"
-  espressif/esp-modbus: "^2.1.1"
+  espressif/esp-modbus: "*"
+  espressif/mqtt: "*"
+  espressif/cjson: "*"
   ## Required IDF version
   idf:
     version: ">=4.1.0"

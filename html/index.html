@@ -94,42 +94,57 @@
             <section id="configs" class="section">
             <div class="card">
                 <h1>Configs</h1>
-                <p class="small">MQTT/HTTP host configuration and Modbus config upload (mb.csv).</p>
+                <p class="small">MQTT host configuration and Modbus config upload (mb.csv).</p>
             </div>
             <div class="card">
-                <h2>MQTT / HTTP Host Settings</h2>
+                <h2>MQTT Settings</h2>
                 <div class="row">
                 <div class="col-half">
                     <div class="field">
-                        <label for="mqtt_host">MQTT Hostname / IP</label>
+                        <label for="mqtt_host">Broker Hostname / IP</label>
                         <input type="text" id="mqtt_host" placeholder="e.g. broker.mqtt.local">
                     </div>
                     <div class="field">
-                    <label for="mqtt_port">MQTT Port</label>
-                    <input type="number" id="mqtt_port" placeholder="1883">
+                        <label for="mqtt_port">Port</label>
+                        <input type="number" id="mqtt_port" placeholder="1883" value="1883">
                     </div>
-                </div>
-                <div class="col-half">
                     <div class="field">
-                    <label for="http_host">HTTP Hostname (for upstream / cloud)</label>
-                    <input type="text" id="http_host" placeholder="e.g. api.example.com">
+                        <label for="mqtt_client_id">Client ID</label>
+                        <input type="text" id="mqtt_client_id" placeholder="porta1-device-01">
+                    </div>
+                    <div class="field">
+                        <label for="mqtt_username">Username</label>
+                        <input type="text" id="mqtt_username" autocomplete="off">
+                    </div>
+                    <div class="field">
+                        <label for="mqtt_password">Password</label>
+                        <input type="password" id="mqtt_password" autocomplete="new-password">
                     </div>
                 </div>
                 </div>
                 <button onclick="showAlert()" class="secondary">Load current</button>
                 <button onclick="showAlert()">Save</button>
             </div>
-            <div class="card">
-                <h2>Upload Modbus Config (Excel)</h2>
-                <p class="small">
-                    Select your <b>mb.xlsx</b> file. It will be converted to JSON and uploaded.
-                    <br>Required Sheets: <em>serial, devices, points</em>
-                </p>
-                <div class="field">
-                <label for="mb_file">Choose mb.xlsx</label>
-                <input type="file" id="mb_file" accept=".xlsx .xls">
+            <div class="field">
+                    <label>
+                        <input type="checkbox" id="modbus_enable" onchange="toggleModbus(this.checked)">
+                        Enable Modbus
+                    </label>
                 </div>
-                <button onclick="showAlert()">Convert & Upload JSON</button>
+            <div class="card">
+                <h2>Modbus</h2>
+
+                <div id="modbus_config" style="display:none; margin-top:12px;">
+                    <p class="small">
+                        Select your <b>mb.xlsx</b> file. It will be converted to JSON and uploaded.
+                        <br>Required Sheets: <em>serial, devices, points</em>
+                    </p>
+                    <div class="field">
+                        <label for="mb_file">Choose mb.xlsx</label>
+                        <input type="file" id="mb_file" accept=".xlsx,.xls">
+                    </div>
+                    <button onclick="showAlert()">Convert & Upload JSON</button>
+                </div>
             </div>
             <div class="card">
                 <h2>Log</h2>

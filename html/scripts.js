@@ -87,7 +87,11 @@ async function saveWifi() {
   }
 }
 
-
+// function enable Modbus settings
+function toggleModbus(enabled) {
+  const modbuscf = document.getElementById('modbus_config');
+  modbuscf.style.display = enabled ? 'block' : 'none';
+}
   
 document.addEventListener('DOMContentLoaded', () => {
   // Initialization: Ensure the correct section is shown on load

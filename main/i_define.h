@@ -21,6 +21,7 @@
 
 #define NVS_SNTP_KEY  "sntp"
 #define NVS_WIFI_KEY  "wifiCreds"
+#define NVS_MQTT_KEY  "mqttCreds"
 #define NVS_SD_INDEX_KEY  "sdindex"
 #define NVS_SD_READFILE_KEY  "sdreadfile"
 

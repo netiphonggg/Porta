@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Porta1 Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Porta1</h2>
+            </div>
+            <ul class="menu">
+            <li class="active" data-section="overview" onclick="showSection('overview', this)">
+                <span class="icon">💻</span> <span class="text">Overview</span>
+            </li>
+            <li data-section="monitoring" onclick="showSection('monitoring', this)">
+                <span class="icon">📈</span> <span class="text">Monitoring</span>
+            </li>
+            <li data-section="configs" onclick="showSection('configs', this)">
+                <span class="icon">⚙️</span> <span class="text">Configs</span>
+            </li>
+            <li data-section="wifi" onclick="showSection('wifi', this)">
+                <span class="icon">📶</span> <span class="text">Wi-Fi Connection</span>
+            </li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <section id="overview" class="section active">
+            <div class="card">
+                <h1>Overview</h1>
+                <p class="small">Basic device information.</p>
+            </div>
+            <div class="card">
+                <h2>Device Info</h2>
+                <div class="row">
+                <div class="col-half">
+                    <div class="field">
+                    <label>Device Name</label>
+                    <div id="info_name">-</div>
+                    </div>
+                    <div class="field">
+                    <label>Firmware Version</label>
+                    <div id="info_fw">-</div>
+                    </div>
+                </div>
+                <div class="col-half">
+                    <div class="field">
+                    <label>Chip ID</label>
+                    <div id="info_chip">-</div>
+                    </div>
+                    <div class="field">
+                    <label>IP Address</label>
+                    <div id="info_ip">-</div>
+                    </div>
+                </div>
+                </div>
+                <br>
+                <button onclick="showAlert()">Refresh</button>
+            </div>
+            </section>
+            <section id="monitoring" class="section">
+            <div class="card">
+                <h1>Monitoring</h1>
+                <p class="small">All reading data (example: Modbus, sensors, etc.).</p>
+            </div>
+            <div class="card">
+                <div class="row" style="align-items: center; margin-bottom: 10px;">
+                <div class="col-half">
+                    <h2>Live Data</h2>
+                </div>
+                <div class="col-half" style="text-align: right;">
+                    <button onclick="showAlert()">Refresh now</button>
+                </div>
+                </div>
+                <table>
+                <thead>
+                    <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th>Unit</th>
+                    <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="monitoringTableBody">
+                    </tbody>
+                </table>
+                <p class="small">You can add auto-refresh in JavaScript if needed.</p>
+            </div>
+            </section>
+            <section id="configs" class="section">
+            <div class="card">
+                <h1>Configs</h1>
+                <p class="small">MQTT/HTTP host configuration and Modbus config upload (mb.csv).</p>
+            </div>
+            <div class="card">
+                <h2>MQTT / HTTP Host Settings</h2>
+                <div class="row">
+                <div class="col-half">
+                    <div class="field">
+                        <label for="mqtt_host">MQTT Hostname / IP</label>
+                        <input type="text" id="mqtt_host" placeholder="e.g. broker.mqtt.local">
+                    </div>
+                    <div class="field">
+                    <label for="mqtt_port">MQTT Port</label>
+                    <input type="number" id="mqtt_port" placeholder="1883">
+                    </div>
+                </div>
+                <div class="col-half">
+                    <div class="field">
+                    <label for="http_host">HTTP Hostname (for upstream / cloud)</label>
+                    <input type="text" id="http_host" placeholder="e.g. api.example.com">
+                    </div>
+                </div>
+                </div>
+                <button onclick="showAlert()" class="secondary">Load current</button>
+                <button onclick="showAlert()">Save</button>
+            </div>
+            <div class="card">
+                <h2>Upload Modbus Config (Excel)</h2>
+                <p class="small">
+                    Select your <b>mb.xlsx</b> file. It will be converted to JSON and uploaded.
+                    <br>Required Sheets: <em>serial, devices, points</em>
+                </p>
+                <div class="field">
+                <label for="mb_file">Choose mb.xlsx</label>
+                <input type="file" id="mb_file" accept=".xlsx .xls">
+                </div>
+                <button onclick="showAlert()">Convert & Upload JSON</button>
+            </div>
+            <div class="card">
+                <h2>Log</h2>
+                <div id="log"></div>
+            </div>
+            </section>
+            <section id="wifi" class="section">
+            <div class="card">
+                <h1>Wi-Fi Connection</h1>
+                <p class="small">Setting the Wi-Fi connection.</p>
+            </div>
+            <div class="card">
+                <h2>Wi-Fi Settings</h2>
+                <div class="row">
+                <div class="col-half">
+                    <div class="field">
+                    <label for="wifi_ssid">SSID</label>
+                    <input type="text" id="wifi_ssid" placeholder="Wi-Fi name">
+                    </div>
+                    <div class="field">
+                    <label for="wifi_pass">Password</label>
+                    <input type="password" id="wifi_pass" placeholder="xxxxxx">
+                    </div>
+                </div>
+                </div>
+                <button onclick="clearWifi()" class="secondary">Clear</button>
+                <button onclick="getWifi()" class="secondary">Get Wi-Fi</button>
+                <button onclick="saveWifi()">Save</button>
+            </div>
+            </section>
+        </main>
+    </div>
+
+  <script src="/scripts.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+This paper describes a case study of the model-based 
+condenser water temperature setpoint control for a chiller 
+plant with multiple chillers and cooling towers. The plant 
+was modeled using the Modelica Buildings library. Both the 
+supervisor control and local feedback loop controls were modeled 
+to more realistically represent the real system. The total energy 
+consumptions and computing times under different optimization 
+strategies were compared. The result shows that the daily optimization 
+can provide similar energy saving with significantly less computing 
+time compared to the hourly optimization.
+Chillers are key components of heating, ventilation, and air-conditioning (HVAC) 
+systems and consume large amounts of energy in commercial buildings. This study 
+conducted field tests on the operation performance of chillers in large-scale commercial 
+buildings and analyzed the typical problems influencing their energy efficiency. 
+Subsequently, based on the field test results, a systematic optimization method 
+for chillers was proposed based on external factors, internal factors, and synergy 
+control between them. For external factors, the cooling load prediction model 
+comprising a linear model based on the time series was constructed using historical 
+operation data; the proposed model could be applied to guide the control of 
+chillers to match the building cooling demand accurately with high energy 
+efficiency. For internal factors, the energy performance model of the chiller 
+was constructed using historical operation data, and the operation characteristics 
+of constant-speed and variable-speed centrifugal chillers were compared and summarized.
+Then, using the cooling load prediction model and energy performance model of the chillers,
+a new control strategy was proposed to improve the energy performance under different 
+operating conditions throughout the year. Compared with previous operation modes in 2018 and 2019, 
+the energy saving rates reached 19.21% and 5.22%, respectively, achieving considerable energy-saving 
+and CO2 emission reduction effects.

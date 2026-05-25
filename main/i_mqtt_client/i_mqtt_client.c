@@ -3,6 +3,46 @@
 
 #define TAG  "* MQTT"
 
+/* persistent buffers — esp-mqtt stores pointers, not copies */
+static struct {
+      char host[64];
+      uint16_t port;
+      char client_id[64];
+      char username[32];
+      char password[64];
+} mqtt_cfg;
+
+static void load_mqtt_config_from_nvs(){
+   strncpy(mqtt_cfg.host, "iot-mqtt.egat.co.th", sizeof(mqtt_cfg.host)-1);
+   mqtt_cfg.port = 1883;
+   strncpy(mqtt_cfg.client_id, "porta1", sizeof(mqtt_cfg.client_id)-1);
+   mqtt_cfg.username[0] = '\0';
+   mqtt_cfg.password[0] = '\0';
+
+   nvs_flash_init();       // no harm to call it again
+   nvs_handle_t nvs;
+   if (nvs_open(NVS_MQTT_KEY, NVS_READWRITE, &nvs) != ESP_OK) {
+      ESP_LOGW(TAG, "nvs open fail");
+      return;
+   }
+
+   size_t l;
+   l = sizeof(mqtt_cfg.host);
+   nvs_get_str(nvs, "host", mqtt_cfg.host, &l);
+   l = sizeof(mqtt_cfg.client_id);
+   nvs_get_str(nvs, "client_id", mqtt_cfg.client_id, &l);
+   l = sizeof(mqtt_cfg.username);
+   nvs_get_str(nvs, "username", mqtt_cfg.username, &l);
+   l = sizeof(mqtt_cfg.password);
+   nvs_get_str(nvs, "password", mqtt_cfg.password, &l);
+   nvs_get_u16(nvs, "port", &mqtt_cfg.port);
+   nvs_close(nvs);
+
+   ESP_LOGI(TAG, "mqtt config: host=%s, port=%d, client_id=%s, username=%s, password=%s", 
+      mqtt_cfg.host, mqtt_cfg.port, mqtt_cfg.client_id, mqtt_cfg.username, mqtt_cfg.password);
+
+}
+
 /* get u32 from nvs  */
 esp_err_t nvsGet_u32(const char* namespace_name, uint32_t *nvs_value){
     nvs_flash_init();           // no harm to call it again
@@ -166,7 +206,7 @@ static void mqtt_event_handler(void* event_handler_arg,esp_event_base_t event_ba
       case MQTT_EVENT_CONNECTED:
          ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
          esp_mqtt_client_subscribe(mqttClient, "egat_hq/t100/esp32/cmd/#", 1);     // qos 1
-         esp_mqtt_client_subscribe(mqttClient, "egat_hq/t101/esp32/cfg", 1);
+         esp_mqtt_client_subscribe(mqttClient, "egat_hq/t100/esp32/cfg", 1);
          // esp_mqtt_client_subscribe(mqttClient, "egat_hq/t102/esp32", 1);
          // esp_mqtt_client_subscribe(mqttClient, "egat_hq/t103/esp32", 1);
          
@@ -246,18 +286,28 @@ void stop_mqtt_client(void) {
 // safe_mqtt_shutdown(&my_client);
 
 
+
+
 /******    init mqtt client         */
 esp_err_t init_mqtt_client(void){
    esp_err_t err;
+   load_mqtt_config_from_nvs();
    esp_mqtt_client_config_t esp_mqtt_client_config = {
-   .broker.address.uri = "mqtt://iot-mqtt.egat.co.th:1883",
-   .session.last_will = {
-         .topic = "egat_hq/t100/dev/lwt",
+      .broker.address.hostname = mqtt_cfg.host,
+      .broker.address.port = mqtt_cfg.port,
+      .broker.address.transport = MQTT_TRANSPORT_OVER_TCP,
+      .credentials.client_id = mqtt_cfg.client_id[0] != '\0' ? mqtt_cfg.client_id : NULL,  // Use NULL if client_id is empty
+      .credentials.username = mqtt_cfg.username[0] != '\0' ? mqtt_cfg.username : NULL,  // Use NULL if username is empty
+      .credentials.authentication.password = mqtt_cfg.password[0] != '\0' ? mqtt_cfg.password : NULL,  // Use NULL if password is empty
+      .session.last_will = {
+         .topic = "egat_hq/t100/esp32/status",
          .msg = "Disconnected",
          .msg_len = strlen("Disconnected"),
-         .qos = 1
-   }
+         .qos = 1,
+      },
    };
+
+
    mqttClient = esp_mqtt_client_init(&esp_mqtt_client_config);
    err = esp_mqtt_client_register_event(mqttClient, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
    if (err != ESP_OK) { 

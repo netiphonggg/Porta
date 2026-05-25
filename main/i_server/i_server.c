@@ -230,6 +230,93 @@ static esp_err_t on_getwifi(httpd_req_t *req){
    return ESP_OK;
 }
 
+// ===== api set mqtt config ======
+static esp_err_t on_setmqtt_set(httpd_req_t *req){
+   ESP_LOGI(TAG, "URL: %s", req->uri);
+   int len = req->content_len;
+   if(len <= 0 || len > 1024){
+      httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid content length");
+      return ESP_OK;
+   }
+   char *buf = calloc(1, len + 1);  
+   httpd_req_recv(req, buf, len);
+
+   cJSON *payload = cJSON_Parse(buf);                        // parse json payload to json object
+   free(buf);
+   if(!payload){
+      httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+      return ESP_OK;
+   }
+   cJSON *host = cJSON_GetObjectItem(payload, "host");      // parse json payload to json object
+   cJSON *port = cJSON_GetObjectItem(payload, "port");      // parse json payload to json object
+   cJSON *client_id = cJSON_GetObjectItem(payload, "client_id");      // parse json payload to json object
+   cJSON *username = cJSON_GetObjectItem(payload, "username");      // parse json payload to json object 
+   cJSON *password = cJSON_GetObjectItem(payload, "password");      // parse json payload to json object
+   
+   nvs_flash_init();       // no harm to call it again
+   nvs_handle_t nvs;
+   if(nvs_open(NVS_MQTT_KEY, NVS_READWRITE, &nvs) == ESP_OK){
+      if(cJSON_IsString(host)){
+         nvs_set_str(nvs, "host", host->valuestring);
+         printf("mqtt host: %s\n", host->valuestring);
+      }
+      if(cJSON_IsNumber(port)){
+         nvs_set_u16(nvs, "port", (uint16_t)(port->valueint));
+         printf("mqtt port: %d\n", port->valueint);
+      }
+      if(cJSON_IsString(client_id)){
+         nvs_set_str(nvs, "client_id", client_id->valuestring);
+         printf("mqtt client_id: %s\n", client_id->valuestring);
+      }
+      if(cJSON_IsString(username)){
+         nvs_set_str(nvs, "username", username->valuestring);
+         printf("mqtt username: %s\n", username->valuestring);
+      }
+      if(cJSON_IsString(password)){
+         nvs_set_str(nvs, "password", password->valuestring);
+         printf("mqtt password: %s\n", password->valuestring);
+      }
+      nvs_commit(nvs);
+      nvs_close(nvs);
+   }
+   cJSON_Delete(payload);
+
+   httpd_resp_set_status(req, "200");
+   httpd_resp_send(req, NULL, 0);
+   return ESP_OK;
+}
+
+// ===== api get mqtt config ======
+static esp_err_t on_getmqtt(httpd_req_t *req){
+   nvs_flash_init();
+   nvs_handle_t nvs;
+   nvs_open(NVS_MQTT_KEY, NVS_READONLY, &nvs);
+   
+   char host[64] = {0};
+   char client_id[64] = {0};
+   char username[64] = {0};
+   char password[64] = {0};
+   size_t l;
+   l = sizeof(host);
+   nvs_get_str(nvs, "host", host, &l);
+   l = sizeof(client_id);
+   nvs_get_str(nvs, "client_id", client_id, &l);
+   l = sizeof(username);
+   nvs_get_str(nvs, "username", username, &l);
+   l = sizeof(password);
+   nvs_get_str(nvs, "password", password, &l);
+   uint16_t port=1883;
+   nvs_get_u16(nvs, "port", &port);
+   nvs_close(nvs);
+
+   char json_response[512];
+   snprintf (json_response, sizeof(json_response), "{\"host\":\"%s\", \"port\":%d, \"client_id\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", 
+      host, port, client_id, username, password);
+
+   httpd_resp_set_type(req, "application/json");
+   httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+   return ESP_OK;
+}
 /******    mDNS         */
 esp_err_t start_mdns_service(void){
    esp_err_t err;
@@ -276,6 +363,7 @@ esp_err_t init_esp_server(void){
    esp_err_t err;
    
    esp_server_config.uri_match_fn = httpd_uri_match_wildcard;
+   esp_server_config.max_uri_handlers = 16;   // default is 8, increase it if you have more handlers to register
 
    err = httpd_start(&esp_server, &esp_server_config);
    if (err != ESP_OK) { 
@@ -349,6 +437,21 @@ esp_err_t init_esp_server(void){
       return ESP_FAIL;
    }
 
+   // ===== mqtt config api =====
+   httpd_uri_t setmqtt_end_point_config = {
+      .uri = "/api/setmqtt",
+      .method = HTTP_POST,
+      .handler = on_setmqtt_set
+   };
+   httpd_register_uri_handler(esp_server, &setmqtt_end_point_config);
+
+   httpd_uri_t getmqtt_end_point_config = {
+      .uri = "/api/getmqtt",
+      .method = HTTP_GET,
+      .handler = on_getmqtt
+   };
+   httpd_register_uri_handler(esp_server, &getmqtt_end_point_config);
+   
    /***  allways move default url to the last */
    httpd_uri_t default_url = {    // move wildcard url /* to the last to let server check rout before first 
       .uri = "/*",

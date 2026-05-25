@@ -93,6 +93,27 @@ function toggleModbus(enabled) {
   modbuscf.style.display = enabled ? 'block' : 'none';
 }
   
+async function saveMqtt() {
+  const payload = {
+    host: document.getElementById('mqtt_host').value,
+    port: Number(document.getElementById('mqtt_port').value),
+    client_id: document.getElementById('mqtt_client_id').value,
+    username: document.getElementById('mqtt_username').value,
+    password: document.getElementById('mqtt_password').value,
+  };
+  const res = await apiPostJson('/api/setmqtt', payload);
+  alert(res.status === 200 ? 'MQTT settings saved successfully!' : 'Failed to save MQTT settings. response: ' + res.status);
+}
+
+async function loadMqtt() {
+  const data = await apiGet('/api/getmqtt');
+  document.getElementById('mqtt_host').value = data.host || '';
+  document.getElementById('mqtt_port').value = data.port || 1883;
+  document.getElementById('mqtt_client_id').value = data.client_id || '';
+  document.getElementById('mqtt_username').value = data.username || '';
+  document.getElementById('mqtt_password').value = data.password || '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Initialization: Ensure the correct section is shown on load
   const activeMenuItem = document.querySelector('.menu li.active');

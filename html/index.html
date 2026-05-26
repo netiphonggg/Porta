@@ -5,6 +5,7 @@
   <title>Porta1 Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/style.css">
+  <script src="/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="layout">
@@ -143,7 +144,7 @@
                         <label for="mb_file">Choose mb.xlsx</label>
                         <input type="file" id="mb_file" accept=".xlsx,.xls">
                     </div>
-                    <button onclick="showAlert()">Convert & Upload JSON</button>
+                    <button onclick="uploadModbusConfig()">Convert & Upload JSON</button>
                 </div>
             </div>
             <div class="card">

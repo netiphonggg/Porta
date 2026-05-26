@@ -114,6 +114,86 @@ async function loadMqtt() {
   document.getElementById('mqtt_password').value = data.password || '';
 }
 
+async function uploadModbusConfig() {
+  const file = document.getElementById('mb_file').files[0];
+  if (!file) {
+    alert('Please select a Modbus configuration file to upload.');
+    return;
+  }
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    // ===== sheet : serial (key/value rows) =====
+    const ws_serial = workbook.Sheets['serial'];
+    if (!ws_serial) {
+      throw new Error('Missing Sheet: serial');
+    }
+    const serialRows = XLSX.utils.sheet_to_json(ws_serial, { header: ['key', 'value'] });
+    const serial = {};
+    serialRows.forEach(row => { if (row.key) serial[row.key] = row.value; });
+
+    // ===== sheet : devices ======
+    const ws_devices = workbook.Sheets['devices'];
+    if (!ws_devices) {
+      throw new Error('Missing Sheets: devices');
+    }
+    const devicesRows = XLSX.utils.sheet_to_json(ws_devices);
+
+    // ===== sheet : points ======
+    const ws_points = workbook.Sheets['points'];
+    if (!ws_points) {
+      throw new Error('Missing Sheet: point');
+    }
+    const pointsRows = XLSX.utils.sheet_to_json(ws_points);
+
+    // ===== ประกอบเป็น nested object =====
+    const devices = devicesRows.map(dev => ({
+      slave_id : Number(dev.slave_id),
+      name : String(dev.name || ''),
+      access : String(dev.access || ''),
+      points : pointsRows.filter(p => Number(p.slave_id) === Number(dev.slave_id)).map(p => ({
+        cid : Number(p.cid),
+        name : String(p.name || ''),
+        unit : String(p.unit || ''),
+        reg_type : String(p.reg_type || 'H'),
+        reg_addr : Number(p.reg_addr),
+        reg_size : Number(p.reg_size),
+        datatype : String(p.datatype || 'UB'),
+        scale : Number(p.scale || 1),
+        min: Number(p.min || 0),
+        max: Number(p.max || 0),
+    }))
+  }));
+  const config = {
+    serial: {
+      baud : Number(serial.baud) || 9600,
+      parity : String(serial.parity) || 'N',
+      data_bits : Number(serial.data_bits) || 8,
+      stop_bits: Number(serial.stop_bits) || 1,
+  },
+    devices: devices,
+  };
+
+  // ===== validate ต่ำ ======
+  if (devices.length === 0) throw new Error ('No devices found');
+  for (const d of devices) {
+    if (d.points.length === 0 ) throw new Error(`Device ${d.slave_id} has no points`);
+  } 
+
+  // ===== POST JSON to ESP32 =====
+  const res = await fetch('/api/upload-mb',{
+    method: 'POST',
+    headers: { 'Content-type': 'application/json'},
+    body: JSON.stringify(config),
+  });
+  if(!res.ok) throw new Error(`Upload failed: ${res.status}`);
+ alert(`Uploaded ${devices.length} device(s), ${devices.reduce((s,d)=>s+d.points.length,0)} point(s)`);
+  } catch (err) {
+    alert ('Error: '+ err.message);
+    console.error(err);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Initialization: Ensure the correct section is shown on load
   const activeMenuItem = document.querySelector('.menu li.active');

@@ -231,7 +231,7 @@ void app_main(void){
 
 
    /***** modbus ******/ 
-      // init_esp_modbus();
+      init_esp_modbus();
 
    /*****  REST API post request *****/
       // init_esp_https();

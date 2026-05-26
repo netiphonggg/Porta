@@ -317,6 +317,98 @@ static esp_err_t on_getmqtt(httpd_req_t *req){
    httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
    return ESP_OK;
 }
+
+// ====== api upload modbus config ======
+static esp_err_t on_upload_mb(httpd_req_t *req){
+   ESP_LOGI(TAG, "URL: %s len=%d", req->uri, req->content_len);
+   if(req->content_len <= 0 || req->content_len > (200*1024)){
+      httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid content length");
+      return ESP_OK;
+   }
+
+   const char *tmp_path = "/sd/conf/mb.tmp";
+   const char *final_path = MB_CONF_PATH;
+
+   mkdir("/sd/conf", 0775);
+
+   FILE *fp = fopen(tmp_path, "wb");
+   if(!fp){
+      ESP_LOGE(TAG, "fopen %s fail", tmp_path);
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "open file fail");
+      return ESP_OK;
+   }
+ // ===== chunked receive + stream-write =====
+   char chunk[1024];
+   int remaining = req->content_len;
+   while(remaining > 0){
+      int to_read = remaining > sizeof(chunk) ? sizeof(chunk) : remaining;
+      int recvd = httpd_req_recv(req, chunk, to_read);
+      if(recvd <= 0){
+         if(recvd == HTTPD_SOCK_ERR_TIMEOUT) continue;
+         fclose(fp);
+         remove(tmp_path);
+         ESP_LOGE(TAG, "recv fail %d", recvd);
+         httpd_resp_send_err(req, HTTPD_408_REQ_TIMEOUT, "recv fail");
+         return ESP_OK;
+      }
+      if(fwrite(chunk, 1, recvd, fp) != (size_t)recvd){
+         fclose(fp);
+         remove(tmp_path);
+         ESP_LOGE(TAG, "fwrite fail");
+         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "write fail");
+         return ESP_OK;
+      }
+      remaining -= recvd;
+   }
+   fclose(fp);
+
+   // ===== validate ด้วย cJSON (อ่านกลับขึ้นมา parse) =====
+   fp = fopen(tmp_path, "rb");
+   fseek(fp, 0, SEEK_END);
+   long sz = ftell(fp);
+   fseek(fp, 0, SEEK_SET);
+   char *body = malloc(sz + 1);
+   fread(body, 1, sz, fp);
+   body[sz] = '\0';
+   fclose(fp);
+
+   cJSON *root = cJSON_Parse(body);
+   free(body);
+   if(!root){
+      remove(tmp_path);
+      ESP_LOGE(TAG, "JSON parse fail");
+      httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+      return ESP_OK;
+   }
+   cJSON *serial = cJSON_GetObjectItem(root, "serial");
+   cJSON *devices = cJSON_GetObjectItem(root, "devices");
+   if(!cJSON_IsObject(serial) || !cJSON_IsArray(devices) || cJSON_GetArraySize(devices) == 0){
+      cJSON_Delete(root);
+      remove(tmp_path);
+      ESP_LOGE(TAG, "Schema invalid");
+      httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Schema invalid");
+      return ESP_OK;
+   }
+   int dev_count = cJSON_GetArraySize(devices);
+   cJSON_Delete(root);
+
+   // ===== atomic rename =====
+   remove(final_path);                  // ลบของเก่า (ถ้ามี)
+   if(rename(tmp_path, final_path) != 0){
+      ESP_LOGE(TAG, "rename fail");
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "rename fail");
+      return ESP_OK;
+   }
+
+   ESP_LOGI(TAG, "mb.json saved (%ld bytes), %d device(s)", dev_count);
+
+   // TODO: ปล่อย semaphore ให้ modbus task reload — เพิ่มทีหลังเมื่อทำ runtime reload
+   // xSemaphoreGive(binSem_initModbus);
+
+   httpd_resp_set_type(req, "application/json");
+   httpd_resp_sendstr(req, "{\"ok\":true}");
+   return ESP_OK;
+}
 /******    mDNS         */
 esp_err_t start_mdns_service(void){
    esp_err_t err;
@@ -451,6 +543,14 @@ esp_err_t init_esp_server(void){
       .handler = on_getmqtt
    };
    httpd_register_uri_handler(esp_server, &getmqtt_end_point_config);
+
+   httpd_uri_t upload_mb_uri = {
+      .uri = "/api/upload-mb",
+      .method = HTTP_POST,
+      .handler = on_upload_mb
+   };
+   err = httpd_register_uri_handler(esp_server, &upload_mb_uri);
+   if (err != ESP_OK) { ESP_LOGW(TAG, "Register upload-mb fail"); return ESP_FAIL; }
    
    /***  allways move default url to the last */
    httpd_uri_t default_url = {    // move wildcard url /* to the last to let server check rout before first 

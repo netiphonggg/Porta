@@ -184,7 +184,12 @@ void app_main(void){
       /*****  GPIO isr tesk *****/
       xTaskCreate(powerLossTask, "PowerLossTask", 2048, NULL, 10, &ploss_receiverHandler);
       xTaskCreate(sdDetectTask, "SDDetechTask", 2048, NULL, 10, &sddetect_receiverHandler);
-
+      
+   /* connect wifi */
+      xTaskCreate(wifiInitTask, "init comms", 3072, NULL, 10, NULL);
+      xTaskCreate(OnConnectedTask, "handle comms", 5120, NULL, 5, NULL);
+      xSemaphoreGive(binSem_initWifi);
+   
    /***** i2c ******/  
       init_esp_i2c();
       
@@ -224,10 +229,7 @@ void app_main(void){
    /*****  mount fat storage  *****/
       mount_fat_ro();         /* mount fat file read only */
       
-   /* connect wifi */
-      xTaskCreate(wifiInitTask, "init comms", 3072, NULL, 10, NULL);
-      xTaskCreate(OnConnectedTask, "handle comms", 5120, NULL, 5, NULL);
-      xSemaphoreGive(binSem_initWifi);
+   
 
 
    /***** modbus ******/ 
